@@ -250,6 +250,116 @@ func (r Result[T]) Expect(panicMsg string) T {
 	return r.Value().Expect(panicMsg)
 }
 
+// Wrap converts a (value, error) pair into a Result[T].
+// This bridges traditional Go error handling with Result patterns.
+//
+// When to use:
+//   - When calling existing functions that return (T, error)
+//   - When migrating code to use Result without changing function signatures
+//   - When integrating with libraries that use traditional error handling
+//
+// Example - Wrapping database operations:
+//
+//	func FindUserByID(id int) Result[*User] {
+//	    user, err := db.QueryUser(id)
+//	    return result.Wrap(user, err)
+//	}
+//
+// Example - Wrapping file operations:
+//
+//	func ReadConfigFile(path string) Result[[]byte] {
+//	    data, err := os.ReadFile(path)
+//	    return result.Wrap(data, err)
+//	}
+func Wrap[T any](value T, err error) Result[T] {
+	if err != nil {
+		return Err[T](err)
+	}
+	return Ok(value)
+}
+
+// WrapPtr converts a (pointer, error) pair into Result[*T], treating nil pointers as errors.
+// Use when nil values represent failure conditions.
+//
+// When to use:
+//   - When functions return (*T, error) and nil pointers indicate failure
+//   - When you want to enforce non-nil return values
+//   - When dealing with lookup operations that should find entities
+//
+// Example - Wrapping entity lookups:
+//
+//	func FindOrganization(name string) Result[*Organization] {
+//	    org, err := db.FindOrgByName(name)
+//	    return result.WrapPtr(org, err)
+//	}
+//
+// Example - Wrapping cache lookups:
+//
+//	func GetCachedUser(userID int) Result[*User] {
+//	    user, err := cache.GetUser(userID)
+//	    return result.WrapPtr(user, err)
+//	}
+func WrapPtr[T any](value *T, err error) Result[*T] {
+	if err != nil {
+		return Err[*T](err)
+	}
+	if value == nil {
+		return Err[*T](fmt.Errorf("nil value returned"))
+	}
+	return Ok(value)
+}
+
+// WrapFunc wraps a function returning (T, error) into a function returning Result[T].
+// Use to adapt existing functions to Result patterns.
+//
+// When to use:
+//   - When you want to create reusable Result-based versions of existing zero-argument functions
+//   - When building higher-level APIs with Result patterns
+//   - When composing multiple traditional functions together
+//
+// Example - Creating Result-based API clients:
+//
+//	var loadConfig = result.WrapFunc(config.LoadConfig)
+//	// Now loadConfig() returns Result[Config] instead of (Config, error)
+//
+// Example - Wrapping a no-arg database connection:
+//
+//	var connectDB = result.WrapFunc(db.Connect)
+//
+//	// Usage:
+//	func Initialize() Result[Database] {
+//	    config := loadConfig()        // Result[Config]
+//	    db := result.AndThen(config, func(c Config) Result[Database] {
+//	        return connectDB()        // Result[Database]
+//	    })
+//	    return db
+//	}
+func WrapFunc[T any](fn func() (T, error)) func() Result[T] {
+	return func() Result[T] {
+		return Wrap(fn())
+	}
+}
+
+// WrapFunc1 wraps a single-argument function returning (T, error) into a function returning Result[T].
+//
+// When to use:
+//   - When adapting single-argument functions to Result patterns
+//   - When creating reusable adapters for common operations
+//
+// Example - Database operation adapters:
+//
+//	var findUserByID = result.WrapFunc1(db.FindUserByID)
+//	var findOrgByName = result.WrapFunc1(db.FindOrgByName)
+//
+//	// Usage:
+//	userResult := findUserByID(123)
+//	orgResult := findOrgByName("acme")
+func WrapFunc1[A, T any](fn func(A) (T, error)) func(A) Result[T] {
+	return func(a A) Result[T] {
+		return Wrap(fn(a))
+	}
+}
+
 // Unwrap returns the value if Ok, or panics with a generic message if Err.
 // Shorthand for Expect with a default panic message.
 //
