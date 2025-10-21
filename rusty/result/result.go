@@ -340,6 +340,32 @@ func WrapFunc[T any](fn func() (T, error)) func() Result[T] {
 	}
 }
 
+// WrapPtrFunc wraps a zero-argument function returning (*T, error)
+// into a function returning Result[*T], treating nil pointers as errors.
+//
+// When to use:
+//   - When you have a function like func() (*User, error) and want a Result-based version
+//   - When you want to reuse the adapter across multiple call sites
+//   - When building railway-oriented pipelines with lookup functions
+//
+// Example:
+//
+//	var findUser = result.WrapPtrFunc(db.FindUserByID)
+//	// Now findUser() returns Result[*User], not (*User, error)
+//
+//	func ProcessUser(userID int) Result[Profile] {
+//	    user := findUser() // Result[*User]
+//	    return user.AndThen(func(u *User) Result[Profile] {
+//	        return findProfile(u.ID) // another Result-returning function
+//	    })
+//	}
+func WrapPtrFunc[T any](fn func() (*T, error)) func() Result[*T] {
+	return func() Result[*T] {
+		ptr, err := fn()
+		return WrapPtr(ptr, err)
+	}
+}
+
 // WrapFunc1 wraps a single-argument function returning (T, error) into a function returning Result[T].
 //
 // When to use:
@@ -357,6 +383,35 @@ func WrapFunc[T any](fn func() (T, error)) func() Result[T] {
 func WrapFunc1[A, T any](fn func(A) (T, error)) func(A) Result[T] {
 	return func(a A) Result[T] {
 		return Wrap(fn(a))
+	}
+}
+
+// WrapPtrFunc1 wraps a single-argument function returning (*T, error)
+// into a function returning Result[*T], treating nil pointers as errors.
+//
+// When to use:
+//   - When you have a function like func(id int) (*User, error) and want a Result-based version
+//   - When you want to reuse the adapter across multiple call sites
+//   - When chaining multiple pointer-returning lookups
+//
+// Example:
+//
+//	var findUser = result.WrapPtrFunc1(db.FindUserByID)
+//	var findProfile = result.WrapPtrFunc1(db.FindProfileByUserID)
+//
+//	func GetCompleteUser(userID int) Result[CompleteUser] {
+//	    return findUser(userID).
+//	        AndThen(func(u *User) Result[Profile] {
+//	            return findProfile(u.ID)
+//	        }).
+//	        Map2(func(u *User, p *Profile) CompleteUser {
+//	            return CompleteUser{User: u, Profile: p}
+//	        })
+//	}
+func WrapPtrFunc1[A, T any](fn func(A) (*T, error)) func(A) Result[*T] {
+	return func(a A) Result[*T] {
+		ptr, err := fn(a)
+		return WrapPtr(ptr, err)
 	}
 }
 
