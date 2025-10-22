@@ -1,3 +1,6 @@
+// Copyright (c) 2025 SeyedAli
+// Licensed under the MIT License. See LICENSE file in the project root for details.
+
 // Package result. result provides a Rust-like Result[T] type for Go to handle operations that can fail.
 // It replaces the traditional Go pattern of returning (T, error) with a single Result[T] that is either Ok(value) or Err(error).
 //

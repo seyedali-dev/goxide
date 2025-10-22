@@ -1,3 +1,6 @@
+// Copyright (c) 2025 SeyedAli
+// Licensed under the MIT License. See LICENSE file in the project root for details.
+
 // Package option. option provides a Rust-like Option[T] type for Go to handle optional values safely.
 // It eliminates nil pointer dereferences and makes the absence of values explicit in function signatures.
 // Use Option[T] instead of *T when you want to be explicit about "value may not exist" semantics.
