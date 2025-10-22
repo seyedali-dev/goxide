@@ -9,6 +9,7 @@
 //   - Composable: Chain multiple fallible operations using Map, FlatMap, AndThen
 //   - Explicit: Cannot accidentally use a zero value when an error occurred
 //   - Functional: Enables railway-oriented programming patterns
+//   - Early returns: Try() enables Rust-like ? operator behavior with deferred error handling
 //
 // Common use cases:
 //   - Database operations that can fail (queries, inserts, updates)
@@ -29,9 +30,20 @@
 //	// With Result
 //	userResult := repo.FindByID(123)
 //	// Cannot access value without explicitly handling error case
+//
+// Example - Using Try() for early returns:
+//
+//	func ProcessOrder(orderID int) (res Result[Receipt]) {
+//	    defer Catch(&res) // Captures panics from Try()
+//	    order := FindOrder(orderID).Try()
+//	    payment := ProcessPayment(order).Try()
+//	    receipt := GenerateReceipt(payment).Try()
+//	    return Ok(receipt)
+//	}
 package result
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/seyedali-dev/gopherbox/rusty/option"
@@ -49,9 +61,15 @@ import (
 //   - No nil pointer dereferences from forgotten error checks
 //   - Chainable operations that short-circuit on first error
 //   - Clear API showing which operations can fail
+//   - Early return support via Try() method
 type Result[T any] struct {
 	value option.Option[T]
 	err   error
+}
+
+// tryError wraps errors raised by Try() to distinguish them from other panics.
+type tryError struct {
+	error
 }
 
 // -------------------------------------------- Constants --------------------------------------------
@@ -75,18 +93,9 @@ var ErrEmptyResult = fmt.Errorf("result is error but error was nil")
 //	func (r *Repository) GetUser(id int) Result[User] {
 //	    user, err := r.db.QueryUser(id)
 //	    if err != nil {
-//	        return result.Err[User](err)
+//	        return Err[User](err)
 //	    }
-//	    return result.Ok(user) // Success case
-//	}
-//
-// Example - Successful validation:
-//
-//	func ValidateAge(age int) Result[int] {
-//	    if age < 0 || age > 150 {
-//	        return result.Err[int](fmt.Errorf("invalid age: %d", age))
-//	    }
-//	    return result.Ok(age) // Valid age
+//	    return Ok(user) // Success case
 //	}
 func Ok[T any](value T) Result[T] {
 	return Result[T]{
@@ -112,21 +121,12 @@ func Ok[T any](value T) Result[T] {
 //	    user := User{}
 //	    err := r.db.QueryRow("SELECT * FROM users WHERE email = ?", email).Scan(&user)
 //	    if err == sql.ErrNoRows {
-//	        return result.Err[User](fmt.Errorf("user not found: %s", email))
+//	        return Err[User](fmt.Errorf("user not found: %s", email))
 //	    }
 //	    if err != nil {
-//	        return result.Err[User](fmt.Errorf("database error: %w", err))
+//	        return Err[User](fmt.Errorf("database error: %w", err))
 //	    }
-//	    return result.Ok(user)
-//	}
-//
-// Example - Validation failure:
-//
-//	func ValidateEmail(email string) Result[string] {
-//	    if !strings.Contains(email, "@") {
-//	        return result.Err[string](fmt.Errorf("invalid email format: %s", email))
-//	    }
-//	    return result.Ok(email)
+//	    return Ok(user)
 //	}
 func Err[T any](err error) Result[T] {
 	return Result[T]{
@@ -223,6 +223,233 @@ func (r Result[T]) Err() error {
 		return r.err
 	}
 	return nil
+}
+
+// Try returns the value if Ok, or panics with a tryError if Err.
+// This enables Rust-like ? operator behavior when combined with Catch().
+// The panic will be recovered by Catch() and converted back to a Result.
+//
+// When to use:
+//   - When you want early returns without verbose if-err-return patterns
+//   - When building sequential operations that should stop on first error
+//   - When the calling function uses defer Catch(&res)
+//
+// IMPORTANT: The calling function MUST use defer Catch(&res) to recover the panic.
+//
+// Example - Sequential operations with early returns:
+//
+//	func ProcessOrder(orderID int) (res Result[Receipt]) {
+//	    defer Catch(&res)
+//	    order := FindOrder(orderID).Try()       // Returns early if error
+//	    payment := ProcessPayment(order).Try()  // Returns early if error
+//	    receipt := GenerateReceipt(payment).Try() // Returns early if error
+//	    return Ok(receipt)
+//	}
+//
+// Example - Chained database operations:
+//
+//	func GetUserEmail(userID int) (res Result[string]) {
+//	    defer Catch(&res)
+//	    user := repo.FindUser(userID).Try()
+//	    profile := repo.FindProfile(user.ProfileID).Try()
+//	    return Ok(profile.Email)
+//	}
+func (r Result[T]) Try() T {
+	if r.IsErr() {
+		panic(tryError{r.Err()})
+	}
+	return r.Unwrap()
+}
+
+// Catch recovers from panics raised by Try() and populates the Result pointer.
+// This must be deferred at the beginning of functions that use Try().
+//
+// When to use:
+//   - ALWAYS defer this when using Try() in a function
+//   - Place as first defer statement to ensure it runs last
+//   - Pass pointer to named Result return value
+//
+// Note: Panics that are not from Try() will be re-raised.
+//
+// Example - Basic usage:
+//
+//	func DoWork() (res Result[Data]) {
+//	    defer Catch(&res) // Must be first defer
+//	    data := FetchData().Try()
+//	    return Ok(data)
+//	}
+//
+// Example - With error handlers:
+//
+//	func GetUser(id int) (res Result[User]) {
+//	    defer Catch(&res)
+//	    defer CatchWith(&res, func(err error) User {
+//	        log.Printf("Using cache fallback: %v", err)
+//	        return GetCachedUser(id).Try()
+//	    }, ErrDatabaseDown)
+//	    return repo.FindUser(id)
+//	}
+func Catch[T any](res *Result[T]) {
+	if r := recover(); r != nil {
+		err, ok := r.(tryError)
+		if !ok {
+			// Re-panic if not a tryError
+			panic(r)
+		}
+		*res = Err[T](err.error)
+	}
+}
+
+// CatchWith recovers from specific errors and applies a handler function.
+// This enables error-specific recovery strategies similar to match expressions in Rust.
+// Must be deferred AFTER Catch() to handle errors before they bubble up.
+//
+// When to use:
+//   - When you want to handle specific error types with custom logic
+//   - When implementing fallback strategies (cache, retry, default values)
+//   - When you need to transform or recover from known error conditions
+//
+// Note: Handler can call Try() which may succeed or propagate a new error.
+// If no when errors specified, handler applies to ALL errors.
+//
+// Example - Cache fallback on database error:
+//
+//	func GetUser(id int) (res Result[User]) {
+//	    defer Catch(&res)
+//	    defer CatchWith(&res, func(err error) User {
+//	        return GetCachedUser(id).Try()
+//	    }, ErrDatabaseDown)
+//	    return repo.FindUser(id)
+//	}
+//
+// Example - Multiple error handlers:
+//
+//	func FetchData() (res Result[Data]) {
+//	    defer Catch(&res)
+//	    defer CatchWith(&res, func(err error) Data {
+//	        return FetchFromRemote().Try()
+//	    }, ErrCacheMiss)
+//	    defer CatchWith(&res, func(err error) Data {
+//	        return GetFromCache().Try()
+//	    }, ErrDatabaseTimeout)
+//	    return repo.QueryData()
+//	}
+//
+// Example - Handle any error:
+//
+//	func GetConfig() (res Result[Config]) {
+//	    defer Catch(&res)
+//	    defer CatchWith(&res, func(err error) Config {
+//	        log.Printf("Using defaults: %v", err)
+//	        return DefaultConfig()
+//	    }) // No when errors = handles all errors
+//	    return LoadConfigFile()
+//	}
+func CatchWith[T any](res *Result[T], handler func(error) T, when ...error) {
+	defer func() {
+		if res.IsOk() {
+			return
+		}
+
+		err := res.Err()
+		// No specific errors means handle all errors
+		if len(when) == 0 {
+			*res = Ok(handler(err))
+			return
+		}
+
+		// Check if error matches any of the specified errors
+		for _, target := range when {
+			if errors.Is(err, target) {
+				*res = Ok(handler(err))
+				return
+			}
+		}
+	}()
+	defer Catch(res)
+	if r := recover(); r != nil {
+		panic(r)
+	}
+}
+
+// Fallback provides a default value when specific errors occur.
+// Simpler alternative to CatchWith when you just need a constant fallback.
+//
+// When to use:
+//   - When you have a simple default value for error cases
+//   - When you don't need custom error handling logic
+//   - When the fallback doesn't require computation
+//
+// Note: If no when errors specified, fallback applies to ALL errors.
+//
+// Example - Configuration with defaults:
+//
+//	func GetTimeout() (res Result[int]) {
+//	    defer Catch(&res)
+//	    defer Fallback(&res, 30, ErrConfigMissing, ErrInvalidConfig)
+//	    return LoadTimeoutConfig()
+//	}
+//
+// Example - User data with guest fallback:
+//
+//	func GetUserName(id int) (res Result[string]) {
+//	    defer Catch(&res)
+//	    defer Fallback(&res, "Guest", ErrUserNotFound)
+//	    user := repo.FindUser(id).Try()
+//	    return Ok(user.Name)
+//	}
+//
+// Example - Fallback for any error:
+//
+//	func GetFeatureFlag(name string) (res Result[bool]) {
+//	    defer Catch(&res)
+//	    defer Fallback(&res, false) // Default to false for any error
+//	    return config.GetFlag(name)
+//	}
+func Fallback[T any](res *Result[T], fallback T, when ...error) {
+	defer CatchWith(res, func(_ error) T { return fallback }, when...)
+	if r := recover(); r != nil {
+		panic(r)
+	}
+}
+
+// CatchErr adapts Catch for functions returning (T, error) signature.
+// Useful when implementing interfaces or overriding methods with traditional Go signatures.
+//
+// When to use:
+//   - When implementing interfaces that require (T, error) returns
+//   - When overriding methods in generated code
+//   - When integrating with code that expects traditional Go error handling
+//
+// Example - HTTP handler implementation:
+//
+//	func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) (user User, err error) {
+//	    defer CatchErr(&user, &err)
+//	    userID := ParseUserID(r).Try()
+//	    return repo.FindUser(userID).Try(), nil
+//	}
+//
+// Example - Interface implementation:
+//
+//	func (s *Service) FetchData(ctx context.Context) (data Data, err error) {
+//	    defer CatchErr(&data, &err)
+//	    config := LoadConfig().Try()
+//	    return QueryAPI(ctx, config).Try(), nil
+//	}
+func CatchErr[T any](out *T, err *error) {
+	res := Err[T](*err)
+	defer func() {
+		if res.IsErr() {
+			*err = res.Err()
+		} else {
+			*out = res.Unwrap()
+		}
+	}()
+	defer Catch(&res)
+
+	if r := recover(); r != nil {
+		panic(r)
+	}
 }
 
 // Expect returns the value if Ok, or panics with the provided message if Err.
