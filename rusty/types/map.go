@@ -1,3 +1,6 @@
+// Copyright (c) 2025 SeyedAli
+// Licensed under the MIT License. See LICENSE file in the project root for details.
+
 // Package types. map provides small, generic functional helpers inspired by
 // functional programming patterns. These utilities are designed to make
 // higher‑order function composition and default handling more expressive.

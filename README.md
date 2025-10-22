@@ -120,6 +120,8 @@ intOpt = option.Cast[int](data)       // None[int]
 
 ### Result[T] Examples
 
+Some basic usage is mentioned here. For more detailed information, read this [file]().
+
 #### Basic Error Handling
 ```go
 import "github.com/seyedali-dev/gopherbox/rusty/result"
@@ -592,3 +594,10 @@ func (r *UserRepository) CreateUserIfNotExists(email string) result.Result[User]
     return r.Create(newUser)
 }
 ```
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.
+
+Portions of this software are derived from work licensed under the Apache License 2.0.  
+See [Apache-2.0.txt](./THIRD_PARTY_LICENSES/Apache-2.0.txt) for the full license text.
