@@ -1,3 +1,6 @@
+// Copyright (c) 2025 SeyedAli
+// Licensed under the MIT License. See LICENSE file in the project root for details.
+
 // Package chain. chain2 provides fluent method chaining for Result and Option types.
 // This enables a more readable, pipeline-style programming pattern similar to Rust's method chaining.
 //
