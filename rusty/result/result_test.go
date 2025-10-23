@@ -55,7 +55,7 @@ func TestTry_Success(t *testing.T) {
 	compute := func() (res result.Result[int]) {
 		defer result.Catch(&res)
 
-		val := result.Wrap(divide(10, 2)).Try()
+		val := result.Wrap(divide(10, 2)).BubbleUp()
 		return result.Ok(val * 2)
 	}
 
@@ -71,7 +71,7 @@ func TestTry_Success(t *testing.T) {
 func TestTry_Error(t *testing.T) {
 	compute := func() (res result.Result[int]) {
 		defer result.Catch(&res)
-		val := result.Wrap(divide(10, 0)).Try()
+		val := result.Wrap(divide(10, 0)).BubbleUp()
 		return result.Ok(val * 2)
 	}
 
@@ -87,9 +87,9 @@ func TestTry_Error(t *testing.T) {
 func TestTry_MultipleOperations(t *testing.T) {
 	compute := func() (res result.Result[int]) {
 		defer result.Catch(&res)
-		val1 := result.Wrap(divide(100, 2)).Try()  // 50
-		val2 := result.Wrap(divide(val1, 5)).Try() // 10
-		val3 := result.Wrap(divide(val2, 2)).Try() // 5
+		val1 := result.Wrap(divide(100, 2)).BubbleUp()  // 50
+		val2 := result.Wrap(divide(val1, 5)).BubbleUp() // 10
+		val3 := result.Wrap(divide(val2, 2)).BubbleUp() // 5
 		return result.Ok(val3)
 	}
 
@@ -105,9 +105,9 @@ func TestTry_MultipleOperations(t *testing.T) {
 func TestTry_EarlyReturn(t *testing.T) {
 	compute := func() (res result.Result[int]) {
 		defer result.Catch(&res)
-		val1 := result.Wrap(divide(100, 2)).Try()  // 50
-		val2 := result.Wrap(divide(val1, 0)).Try() // Error here - early return
-		val3 := result.Wrap(divide(val2, 2)).Try() // Never reached
+		val1 := result.Wrap(divide(100, 2)).BubbleUp()  // 50
+		val2 := result.Wrap(divide(val1, 0)).BubbleUp() // Error here - early return
+		val3 := result.Wrap(divide(val2, 2)).BubbleUp() // Never reached
 		return result.Ok(val3)
 	}
 
@@ -146,11 +146,11 @@ func TestCatchWith_ChainedFallbacks(t *testing.T) {
 		defer result.Catch(&res)
 		// Try remote API if database fails
 		defer result.CatchWith(&res, func(err error) string {
-			return result.Wrap(findInRemoteAPI(123)).Try()
+			return result.Wrap(findInRemoteAPI(123)).BubbleUp()
 		}, ErrDatabaseDown)
 		// Try database if memory fails
 		defer result.CatchWith(&res, func(err error) string {
-			return result.Wrap(findInDatabase(123)).Try()
+			return result.Wrap(findInDatabase(123)).BubbleUp()
 		}, ErrMemoryNotFound)
 
 		return result.Wrap(findInMemory(123))
@@ -297,7 +297,7 @@ func TestFallback_NoMatch(t *testing.T) {
 func TestCatchErr_Success(t *testing.T) {
 	compute := func() (val int, err error) {
 		defer result.CatchErr(&val, &err)
-		result1 := result.Wrap(divide(10, 2)).Try()
+		result1 := result.Wrap(divide(10, 2)).BubbleUp()
 		return result1 * 2, nil
 	}
 
@@ -313,7 +313,7 @@ func TestCatchErr_Success(t *testing.T) {
 func TestCatchErr_Error(t *testing.T) {
 	compute := func() (val int, err error) {
 		defer result.CatchErr(&val, &err)
-		result1 := result.Wrap(divide(10, 0)).Try()
+		result1 := result.Wrap(divide(10, 0)).BubbleUp()
 		return result1 * 2, nil
 	}
 
@@ -336,11 +336,11 @@ func TestRealWorld_FileProcessing(t *testing.T) {
 		defer result.Catch(&res)
 		defer result.Fallback(&res, []byte("default content"), os.ErrNotExist)
 
-		file := result.Wrap(os.Open(filename)).Try()
+		file := result.Wrap(os.Open(filename)).BubbleUp()
 		defer file.Close()
 
 		buffer := make([]byte, 100)
-		n := result.Wrap(file.Read(buffer)).Try()
+		n := result.Wrap(file.Read(buffer)).BubbleUp()
 		return result.Ok(buffer[:n])
 	}
 
@@ -416,9 +416,9 @@ func TestRealWorld_OrderProcessingPipeline(t *testing.T) {
 	processOrder := func(order Order) (res result.Result[Receipt]) {
 		defer result.Catch(&res)
 
-		validOrder := validateOrder(order).Try()
-		payment := processPayment(validOrder).Try()
-		receipt := generateReceipt(payment).Try()
+		validOrder := validateOrder(order).BubbleUp()
+		payment := processPayment(validOrder).BubbleUp()
+		receipt := generateReceipt(payment).BubbleUp()
 
 		return result.Ok(receipt)
 	}
@@ -450,11 +450,11 @@ func TestRealWorld_MultiLayerFallback(t *testing.T) {
 		defer result.Fallback(&res, "ultimate-default")
 		// Try remote API if database fails
 		defer result.CatchWith(&res, func(err error) string {
-			return result.Wrap(findInRemoteAPI(id)).Try()
+			return result.Wrap(findInRemoteAPI(id)).BubbleUp()
 		}, ErrDatabaseDown)
 		// Try database if memory fails
 		defer result.CatchWith(&res, func(err error) string {
-			return result.Wrap(findInDatabase(id)).Try()
+			return result.Wrap(findInDatabase(id)).BubbleUp()
 		}, ErrMemoryNotFound)
 
 		// Try memory first
@@ -508,8 +508,8 @@ func TestEdgeCase_NestedTryCalls(t *testing.T) {
 
 	outer := func() (res result.Result[int]) {
 		defer result.Catch(&res)
-		val1 := inner(10, 2).Try()
-		val2 := inner(val1, 0).Try() // This will error
+		val1 := inner(10, 2).BubbleUp()
+		val2 := inner(val1, 0).BubbleUp() // This will error
 		return result.Ok(val2)
 	}
 
@@ -528,7 +528,7 @@ func TestEdgeCase_CatchWithReThrow(t *testing.T) {
 		// Handler that re-throws a different error
 		defer result.CatchWith(&res, func(err error) string {
 			// Transform error and re-throw
-			result.Err[string](ErrRemoteAPIFailed).Try()
+			result.Err[string](ErrRemoteAPIFailed).BubbleUp()
 			return ""
 		}, ErrDatabaseDown)
 
@@ -572,9 +572,9 @@ func BenchmarkTraditionalErrorHandling(b *testing.B) {
 func BenchmarkResultWithTry(b *testing.B) {
 	compute := func() (res result.Result[int]) {
 		defer result.Catch(&res)
-		val1 := result.Wrap(divide(100, 2)).Try()
-		val2 := result.Wrap(divide(val1, 5)).Try()
-		val3 := result.Wrap(divide(val2, 2)).Try()
+		val1 := result.Wrap(divide(100, 2)).BubbleUp()
+		val2 := result.Wrap(divide(val1, 5)).BubbleUp()
+		val3 := result.Wrap(divide(val2, 2)).BubbleUp()
 		return result.Ok(val3)
 	}
 

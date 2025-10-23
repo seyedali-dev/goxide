@@ -9,7 +9,7 @@
 //   - Composable: Chain multiple fallible operations using Map, FlatMap, AndThen
 //   - Explicit: Cannot accidentally use a zero value when an error occurred
 //   - Functional: Enables railway-oriented programming patterns
-//   - Early returns: Try() enables Rust-like ? operator behavior with deferred error handling
+//   - Early returns: BubbleUp() enables Rust-like ? operator behavior with deferred error handling
 //
 // Common use cases:
 //   - Database operations that can fail (queries, inserts, updates)
@@ -31,13 +31,13 @@
 //	userResult := repo.FindByID(123)
 //	// Cannot access value without explicitly handling error case
 //
-// Example - Using Try() for early returns:
+// Example - Using BubbleUp() for early returns:
 //
 //	func ProcessOrder(orderID int) (res Result[Receipt]) {
-//	    defer Catch(&res) // Captures panics from Try()
-//	    order := FindOrder(orderID).Try()
-//	    payment := ProcessPayment(order).Try()
-//	    receipt := GenerateReceipt(payment).Try()
+//	    defer Catch(&res) // Captures panics from BubbleUp()
+//	    order := FindOrder(orderID).BubbleUp()
+//	    payment := ProcessPayment(order).BubbleUp()
+//	    receipt := GenerateReceipt(payment).BubbleUp()
 //	    return Ok(receipt)
 //	}
 package result
@@ -61,13 +61,13 @@ import (
 //   - No nil pointer dereferences from forgotten error checks
 //   - Chainable operations that short-circuit on first error
 //   - Clear API showing which operations can fail
-//   - Early return support via Try() method
+//   - Early return support via BubbleUp() method
 type Result[T any] struct {
 	value option.Option[T]
 	err   error
 }
 
-// tryError wraps errors raised by Try() to distinguish them from other panics.
+// tryError wraps errors raised by BubbleUp() to distinguish them from other panics.
 type tryError struct {
 	error
 }
@@ -225,7 +225,7 @@ func (r Result[T]) Err() error {
 	return nil
 }
 
-// Try returns the value if Ok, or panics with a tryError if Err.
+// BubbleUp returns the value if Ok, or panics with a tryError if Err.
 // This enables Rust-like ? operator behavior when combined with Catch().
 // The panic will be recovered by Catch() and converted back to a Result.
 //
@@ -240,9 +240,9 @@ func (r Result[T]) Err() error {
 //
 //	func ProcessOrder(orderID int) (res Result[Receipt]) {
 //	    defer Catch(&res)
-//	    order := FindOrder(orderID).Try()       // Returns early if error
-//	    payment := ProcessPayment(order).Try()  // Returns early if error
-//	    receipt := GenerateReceipt(payment).Try() // Returns early if error
+//	    order := FindOrder(orderID).BubbleUp()       // Returns early if error
+//	    payment := ProcessPayment(order).BubbleUp()  // Returns early if error
+//	    receipt := GenerateReceipt(payment).BubbleUp() // Returns early if error
 //	    return Ok(receipt)
 //	}
 //
@@ -250,32 +250,32 @@ func (r Result[T]) Err() error {
 //
 //	func GetUserEmail(userID int) (res Result[string]) {
 //	    defer Catch(&res)
-//	    user := repo.FindUser(userID).Try()
-//	    profile := repo.FindProfile(user.ProfileID).Try()
+//	    user := repo.FindUser(userID).BubbleUp()
+//	    profile := repo.FindProfile(user.ProfileID).BubbleUp()
 //	    return Ok(profile.Email)
 //	}
-func (r Result[T]) Try() T {
+func (r Result[T]) BubbleUp() T {
 	if r.IsErr() {
 		panic(tryError{r.Err()})
 	}
 	return r.Unwrap()
 }
 
-// Catch recovers from panics raised by Try() and populates the Result pointer.
-// This must be deferred at the beginning of functions that use Try().
+// Catch recovers from panics raised by BubbleUp() and populates the Result pointer.
+// This must be deferred at the beginning of functions that use BubbleUp().
 //
 // When to use:
-//   - ALWAYS defer this when using Try() in a function
+//   - ALWAYS defer this when using BubbleUp() in a function
 //   - Place as first defer statement to ensure it runs last
 //   - Pass pointer to named Result return value
 //
-// Note: Panics that are not from Try() will be re-raised.
+// Note: Panics that are not from BubbleUp() will be re-raised.
 //
 // Example - Basic usage:
 //
 //	func DoWork() (res Result[Data]) {
 //	    defer Catch(&res) // Must be first defer
-//	    data := FetchData().Try()
+//	    data := FetchData().BubbleUp()
 //	    return Ok(data)
 //	}
 //
@@ -285,7 +285,7 @@ func (r Result[T]) Try() T {
 //	    defer Catch(&res)
 //	    defer CatchWith(&res, func(err error) User {
 //	        log.Printf("Using cache fallback: %v", err)
-//	        return GetCachedUser(id).Try()
+//	        return GetCachedUser(id).BubbleUp()
 //	    }, ErrDatabaseDown)
 //	    return repo.FindUser(id)
 //	}
@@ -309,7 +309,7 @@ func Catch[T any](res *Result[T]) {
 //   - When implementing fallback strategies (cache, retry, default values)
 //   - When you need to transform or recover from known error conditions
 //
-// Note: Handler can call Try() which may succeed or propagate a new error.
+// Note: Handler can call BubbleUp() which may succeed or propagate a new error.
 // If no when errors specified, handler applies to ALL errors.
 //
 // Example - Cache fallback on database error:
@@ -317,7 +317,7 @@ func Catch[T any](res *Result[T]) {
 //	func GetUser(id int) (res Result[User]) {
 //	    defer Catch(&res)
 //	    defer CatchWith(&res, func(err error) User {
-//	        return GetCachedUser(id).Try()
+//	        return GetCachedUser(id).BubbleUp()
 //	    }, ErrDatabaseDown)
 //	    return repo.FindUser(id)
 //	}
@@ -327,10 +327,10 @@ func Catch[T any](res *Result[T]) {
 //	func FetchData() (res Result[Data]) {
 //	    defer Catch(&res)
 //	    defer CatchWith(&res, func(err error) Data {
-//	        return FetchFromRemote().Try()
+//	        return FetchFromRemote().BubbleUp()
 //	    }, ErrCacheMiss)
 //	    defer CatchWith(&res, func(err error) Data {
-//	        return GetFromCache().Try()
+//	        return GetFromCache().BubbleUp()
 //	    }, ErrDatabaseTimeout)
 //	    return repo.QueryData()
 //	}
@@ -395,7 +395,7 @@ func CatchWith[T any](res *Result[T], handler func(error) T, when ...error) {
 //	func GetUserName(id int) (res Result[string]) {
 //	    defer Catch(&res)
 //	    defer Fallback(&res, "Guest", ErrUserNotFound)
-//	    user := repo.FindUser(id).Try()
+//	    user := repo.FindUser(id).BubbleUp()
 //	    return Ok(user.Name)
 //	}
 //
@@ -425,16 +425,16 @@ func Fallback[T any](res *Result[T], fallback T, when ...error) {
 //
 //	func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) (user User, err error) {
 //	    defer CatchErr(&user, &err)
-//	    userID := ParseUserID(r).Try()
-//	    return repo.FindUser(userID).Try(), nil
+//	    userID := ParseUserID(r).BubbleUp()
+//	    return repo.FindUser(userID).BubbleUp(), nil
 //	}
 //
 // Example - Interface implementation:
 //
 //	func (s *Service) FetchData(ctx context.Context) (data Data, err error) {
 //	    defer CatchErr(&data, &err)
-//	    config := LoadConfig().Try()
-//	    return QueryAPI(ctx, config).Try(), nil
+//	    config := LoadConfig().BubbleUp()
+//	    return QueryAPI(ctx, config).BubbleUp(), nil
 //	}
 func CatchErr[T any](out *T, err *error) {
 	res := Err[T](*err)

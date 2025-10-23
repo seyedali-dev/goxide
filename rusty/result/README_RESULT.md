@@ -4,7 +4,7 @@
 * [Result Package - Rust-like Error Handling for Go](#result-package---rust-like-error-handling-for-go)
   * [Overview](#overview)
   * [Key Features](#key-features)
-    * [1. Try() - Early Return Pattern (Rust's `?` operator)](#1-try---early-return-pattern-rusts--operator)
+    * [1. BubbleUp() - Early Return Pattern (Rust's `?` operator)](#1-try---early-return-pattern-rusts--operator)
     * [2. CatchWith - Error-Specific Recovery](#2-catchwith---error-specific-recovery)
     * [3. Fallback - Simple Default Values](#3-fallback---simple-default-values)
     * [4. CatchErr - Adapt to Traditional Signatures](#4-catcherr---adapt-to-traditional-signatures)
@@ -18,16 +18,16 @@
     * [Pattern 4: Validation Chain](#pattern-4-validation-chain)
     * [Pattern 5: Gradual Migration](#pattern-5-gradual-migration)
   * [Comparison: Try vs AndThen](#comparison-try-vs-andthen)
-    * [Use Try() when:](#use-try-when)
+    * [Use BubbleUp() when:](#use-try-when)
     * [Use AndThen() when:](#use-andthen-when)
   * [Best Practices](#best-practices)
     * [✅ DO: Always defer Catch() first](#-do-always-defer-catch-first)
-    * [✅ DO: Use named return values with Try()](#-do-use-named-return-values-with-try)
+    * [✅ DO: Use named return values with BubbleUp()](#-do-use-named-return-values-with-try)
     * [✅ DO: Order deferred handlers carefully](#-do-order-deferred-handlers-carefully)
     * [✅ DO: Use CatchWith for error transformation](#-do-use-catchwith-for-error-transformation)
     * [❌ DON'T: Forget to defer Catch()](#-dont-forget-to-defer-catch)
-    * [❌ DON'T: Use Try() outside functions with Catch()](#-dont-use-try-outside-functions-with-catch)
-    * [❌ DON'T: Mix Try() with traditional panic/recover](#-dont-mix-try-with-traditional-panicrecover)
+    * [❌ DON'T: Use BubbleUp() outside functions with Catch()](#-dont-use-try-outside-functions-with-catch)
+    * [❌ DON'T: Mix BubbleUp() with traditional panic/recover](#-dont-mix-try-with-traditional-panicrecover)
   * [Performance Considerations](#performance-considerations)
   * [Migration Guide](#migration-guide)
     * [Step 1: Start with new functions](#step-1-start-with-new-functions)
@@ -84,7 +84,7 @@
 The `result` package provides a Rust-like `Result[T]` type for Go with enhanced error handling capabilities including:
 
 - **Type-safe error handling** - Compiler enforces error checking
-- **Early returns** - `Try()` method enables Rust-like `?` operator behavior
+- **Early returns** - `BubbleUp()` method enables Rust-like `?` operator behavior
 - **Deferred error handling** - `CatchWith` and `Fallback` for elegant error recovery
 - **Functional composition** - `Map`, `FlatMap`, `AndThen` for chaining operations
 - **Zero boilerplate** - Eliminate repetitive `if err != nil` checks
@@ -92,18 +92,18 @@ The `result` package provides a Rust-like `Result[T]` type for Go with enhanced 
 
 ## Key Features
 
-### 1. Try() - Early Return Pattern (Rust's `?` operator)
+### 1. BubbleUp() - Early Return Pattern (Rust's `?` operator)
 
-The `Try()` method enables Rust-like `?` operator behavior by panicking on errors. When combined with `Catch()`, this provides clean early returns without verbose if-err-return patterns.
+The `BubbleUp()` method enables Rust-like `?` operator behavior by panicking on errors. When combined with `Catch()`, this provides clean early returns without verbose if-err-return patterns.
 
 ```go
 func ProcessOrder(orderID int) (res result.Result[Receipt]) {
     defer result.Catch(&res) // MUST defer this first
 
-    // Each Try() returns early on error
-    order := FindOrder(orderID).Try()
-    payment := ProcessPayment(order).Try()
-    receipt := GenerateReceipt(payment).Try()
+    // Each BubbleUp() returns early on error
+    order := FindOrder(orderID).BubbleUp()
+    payment := ProcessPayment(order).BubbleUp()
+    receipt := GenerateReceipt(payment).BubbleUp()
 
     return result.Ok(receipt)
 }
@@ -132,13 +132,13 @@ func ProcessOrder(orderID int) (Receipt, error) {
     return receipt, nil
 }
 
-// With Try() - clean and succinct
+// With BubbleUp() - clean and succinct
 func ProcessOrder(orderID int) (res result.Result[Receipt]) {
     defer result.Catch(&res)
 
-    order := FindOrder(orderID).Try()
-    payment := ProcessPayment(order).Try()
-    receipt := GenerateReceipt(payment).Try()
+    order := FindOrder(orderID).BubbleUp()
+    payment := ProcessPayment(order).BubbleUp()
+    receipt := GenerateReceipt(payment).BubbleUp()
 
     return result.Ok(receipt)
 }
@@ -155,7 +155,7 @@ func GetUser(id int) (res result.Result[User]) {
     // Handle database errors with cache fallback
     defer result.CatchWith(&res, func(err error) User {
         log.Printf("Database down, using cache: %v", err)
-        return GetCachedUser(id).Try()
+        return GetCachedUser(id).BubbleUp()
     }, ErrDatabaseDown)
 
     return repo.FindUser(id)
@@ -170,11 +170,11 @@ func FetchData(id int) (res result.Result[string]) {
 
     // Handlers are checked in reverse order (LIFO)
     defer result.CatchWith(&res, func (err error) string {
-        return FetchFromRemote(id).Try()
+        return FetchFromRemote(id).BubbleUp()
     }, ErrCacheMiss)
 
     defer result.CatchWith(&res, func (err error) string {
-        return GetFromCache(id).Try()
+        return GetFromCache(id).BubbleUp()
     }, ErrDatabaseDown)
 
     return repo.QueryData(id)
@@ -229,8 +229,8 @@ func GetFeatureFlag(name string) (res result.Result[bool]) {
 func HandleRequest(w http.ResponseWriter, r *http.Request) (user User, err error) {
     defer result.CatchErr(&user, &err)
 
-    userID := ExtractUserID(r).Try()
-    user = repo.FindUser(userID).Try()
+    userID := ExtractUserID(r).BubbleUp()
+    user = repo.FindUser(userID).BubbleUp()
 
     return user, nil
 }
@@ -253,12 +253,12 @@ func FindUser(id int) result.Result[*User] {
     return result.Wrap(user, err)
 }
 
-// Using Try() for early returns
+// Using BubbleUp() for early returns
 func GetUserProfile(userID int) (res result.Result[Profile]) {
     defer result.Catch(&res)
     
-    user := FindUser(userID).Try()
-    profile := FindProfile(user.ProfileID).Try()
+    user := FindUser(userID).BubbleUp()
+    profile := FindProfile(user.ProfileID).BubbleUp()
     
     return result.Ok(profile)
 }
@@ -281,10 +281,10 @@ When you have a sequence of operations that depend on each other:
 func CreateAccount(email, password string) (res result.Result[Account]) {
     defer result.Catch(&res)
 
-    validEmail := ValidateEmail(email).Try()
-    hashedPass := HashPassword(password).Try()
-    account := repo.CreateAccount(validEmail, hashedPass).Try()
-    SendWelcomeEmail(account).Try()
+    validEmail := ValidateEmail(email).BubbleUp()
+    hashedPass := HashPassword(password).BubbleUp()
+    account := repo.CreateAccount(validEmail, hashedPass).BubbleUp()
+    SendWelcomeEmail(account).BubbleUp()
 
     return result.Ok(account)
 }
@@ -301,10 +301,10 @@ func GetData(id int) (res result.Result[string]) {
     // Deferred handlers execute in reverse order (LIFO)
     defer result.Fallback(&res, "default-value")
     defer result.CatchWith(&res, func (err error) string {
-        return FetchRemote(id).Try()
+        return FetchRemote(id).BubbleUp()
     }, ErrDatabaseDown)
     defer result.CatchWith(&res, func (err error) string {
-        return GetFromDB(id).Try()
+        return GetFromDB(id).BubbleUp()
     }, ErrCacheMiss)
 
     return GetFromCache(id) // Try cache first
@@ -319,7 +319,7 @@ Handle database transactions with automatic rollback:
 func Transfer(from, to int, amount float64) (res result.Result[string]) {
     defer result.Catch(&res)
 
-    tx := result.Wrap(db.Begin()).Try()
+    tx := result.Wrap(db.Begin()).BubbleUp()
 
     defer func () {
         if res.IsErr() {
@@ -327,9 +327,9 @@ func Transfer(from, to int, amount float64) (res result.Result[string]) {
         }
     }()
 
-    DebitAccount(tx, from, amount).Try()
-    CreditAccount(tx, to, amount).Try()
-    result.Wrap(tx.Commit()).Try()
+    DebitAccount(tx, from, amount).BubbleUp()
+    CreditAccount(tx, to, amount).BubbleUp()
+    result.Wrap(tx.Commit()).BubbleUp()
 
     return result.Ok("transfer completed")
 }
@@ -343,10 +343,10 @@ Chain multiple validations together:
 func ValidateRegistration(req RegistrationRequest) (res result.Result[ValidatedUser]) {
     defer result.Catch(&res)
 
-    email := ValidateEmail(req.Email).Try()
-    password := ValidatePassword(req.Password).Try()
-    username := ValidateUsername(req.Username).Try()
-    age := ValidateAge(req.Age).Try()
+    email := ValidateEmail(req.Email).BubbleUp()
+    password := ValidatePassword(req.Password).BubbleUp()
+    username := ValidateUsername(req.Username).BubbleUp()
+    age := ValidateAge(req.Age).BubbleUp()
 
     return result.Ok(ValidatedUser{
         Email:    email,
@@ -371,8 +371,8 @@ func MigrateFunction(db *sql.DB, id int) (res result.Result[Data]) {
         return result.Err[Data](err)
     }
 
-    // New Result-based function - use Try()
-    enrichedData := enrichData(user).Try()
+    // New Result-based function - use BubbleUp()
+    enrichedData := enrichData(user).BubbleUp()
 
     return result.Ok(enrichedData)
 }
@@ -380,7 +380,7 @@ func MigrateFunction(db *sql.DB, id int) (res result.Result[Data]) {
 
 ## Comparison: Try vs AndThen
 
-### Use Try() when:
+### Use BubbleUp() when:
 
 - Operations are sequential and depend on each other
 - You want imperative, readable code
@@ -390,9 +390,9 @@ func MigrateFunction(db *sql.DB, id int) (res result.Result[Data]) {
 func ProcessOrder(orderID int) (res result.Result[Receipt]) {
     defer result.Catch(&res)
 
-    order := FindOrder(orderID).Try()
-    user := FindUser(order.UserID).Try() // Uses order
-    payment := Charge(user, order).Try() // Uses both user and order
+    order := FindOrder(orderID).BubbleUp()
+    user := FindUser(order.UserID).BubbleUp() // Uses order
+    payment := Charge(user, order).BubbleUp() // Uses both user and order
 
     return result.Ok(GenerateReceipt(payment))
 }
@@ -425,12 +425,12 @@ func DoWork() (res result.Result[Data]) {
     defer result.Catch(&res) // MUST be first
     defer result.Fallback(&res, defaultData)
 
-    data := FetchData().Try()
+    data := FetchData().BubbleUp()
     return result.Ok(data)
 }
 ```
 
-### ✅ DO: Use named return values with Try()
+### ✅ DO: Use named return values with BubbleUp()
 
 ```go
 // ✅ Correct - named return
@@ -470,9 +470,9 @@ func APIGetUser(id int) (res result.Result[User]) {
     // Transform internal errors to API errors
     defer result.CatchWith(&res, func(err error) User {
         if errors.Is(err, sql.ErrNoRows) {
-            result.Err[User](ErrUserNotFound).Try()
+            result.Err[User](ErrUserNotFound).BubbleUp()
         }
-        result.Err[User](ErrInternalServer).Try()
+        result.Err[User](ErrInternalServer).BubbleUp()
         return User{}
     })
 
@@ -485,22 +485,22 @@ func APIGetUser(id int) (res result.Result[User]) {
 ```go
 // ❌ This will panic and crash your program!
 func GetData() result.Result[Data] {
-    data := FetchData().Try() // Panics, no Catch() to recover
+    data := FetchData().BubbleUp() // Panics, no Catch() to recover
     return result.Ok(data)
 }
 ```
 
-### ❌ DON'T: Use Try() outside functions with Catch()
+### ❌ DON'T: Use BubbleUp() outside functions with Catch()
 
 ```go
-// ❌ Don't use Try() at package level or in init()
-var globalData = FetchData().Try() // Will panic!
+// ❌ Don't use BubbleUp() at package level or in init()
+var globalData = FetchData().BubbleUp() // Will panic!
 
 // ✅ Use traditional unwrapping instead
 var globalData = FetchData().UnwrapOr(defaultData)
 ```
 
-### ❌ DON'T: Mix Try() with traditional panic/recover
+### ❌ DON'T: Mix BubbleUp() with traditional panic/recover
 
 ```go
 // ❌ Don't mix patterns
@@ -543,8 +543,8 @@ The Try/Catch pattern uses panic/recover internally, which has some overhead:
 func CreateUser(email string) (res result.Result[User]) {
     defer result.Catch(&res)
 
-    validEmail := ValidateEmail(email).Try()
-    user := repo.Create(validEmail).Try()
+    validEmail := ValidateEmail(email).BubbleUp()
+    user := repo.Create(validEmail).BubbleUp()
 
     return result.Ok(user)
 }
@@ -557,12 +557,12 @@ func CreateUser(email string) (res result.Result[User]) {
 var findUser = result.WrapFunc1(db.FindUserByID)
 var loadConfig = result.WrapFunc(config.Load)
 
-// Now use them with Try()
+// Now use them with BubbleUp()
 func DoWork() (res result.Result[Data]) {
     defer result.Catch(&res)
 
-    user := findUser(123).Try()
-    config := loadConfig().Try()
+    user := findUser(123).BubbleUp()
+    config := loadConfig().BubbleUp()
 
     return ProcessData(user, config)
 }
@@ -590,8 +590,8 @@ func ProcessUser(id int) (Data, error) {
 func ProcessUser(id int) (res result.Result[Data]) {
     defer result.Catch(&res)
 
-    user := db.FindUser(id).Try()
-    profile := db.FindProfile(user.ProfileID).Try()
+    user := db.FindUser(id).BubbleUp()
+    profile := db.FindProfile(user.ProfileID).BubbleUp()
 
     return result.Ok(Process(user, profile))
 }
@@ -608,8 +608,8 @@ func ProcessUser(id int) (res result.Result[Data]) {
 
 ### Early Return Pattern
 
-- `Try() T` - Return value or panic with error (requires Catch)
-- `Catch[T](res *Result[T])` - Recover panics from Try()
+- `BubbleUp() T` - Return value or panic with error (requires Catch)
+- `Catch[T](res *Result[T])` - Recover panics from BubbleUp()
 - `CatchWith[T](res *Result[T], handler func(error) T, when ...error)` - Handle specific errors
 - `Fallback[T](res *Result[T], fallback T, when ...error)` - Provide default for specific errors
 - `CatchErr[T](out *T, err *error)` - Adapt to (T, error) signatures

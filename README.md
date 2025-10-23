@@ -40,8 +40,8 @@ import (
 func GetUser(id int) (res result.Result[User]) {
     defer result.Catch(&res)
     
-    user := db.FindUser(id).Try() // Early return on error
-    profile := db.FindProfile(user.ID).Try() // ? - bubbleup error and return
+    user := db.FindUser(id).BubbleUp() // Early return on error
+    profile := db.FindProfile(user.ID).BubbleUp() // ? - bubbleup error and return
     
     return result.Ok(profile)
 }
@@ -74,7 +74,7 @@ func GetStructTags(user User) []string {
 - Explicit optional values
 
 ### 🛠️ Error Handling
-- **Rust-like Result type** with `Try()` for early returns (equivalent to Rust's `?` operator)
+- **Rust-like Result type** with `BubbleUp()` for early returns (equivalent to Rust's `?` operator)
 - **Error recovery** with `CatchWith` and `Fallback`
 - **Functional composition** with `Map`, `AndThen`, `FlatMap`
 
@@ -94,7 +94,7 @@ func GetStructTags(user User) []string {
 Rust-inspired error handling with early returns and error recovery patterns.
 
 **Key Features:**
-- `Try()` method equivalent to Rust's `?` operator
+- `BubbleUp()` method equivalent to Rust's `?` operator
 - Error-specific recovery with `CatchWith`
 - Functional composition with `Map` and `AndThen`
 - Multi-error combination with `Map2` and `Map3`
@@ -104,9 +104,9 @@ Rust-inspired error handling with early returns and error recovery patterns.
 func ProcessOrder(orderID int) (res result.Result[Receipt]) {
     defer result.Catch(&res)
     
-    order := FindOrder(orderID).Try()
-    payment := ProcessPayment(order).Try()
-    receipt := GenerateReceipt(payment).Try()
+    order := FindOrder(orderID).BubbleUp()
+    payment := ProcessPayment(order).BubbleUp()
+    receipt := GenerateReceipt(payment).BubbleUp()
     
     return result.Ok(receipt)
 }
@@ -257,8 +257,8 @@ func GetUserData(id int) (UserData, error) {
 func GetUserData(id int) (res result.Result[UserData]) {
     defer result.Catch(&res)
     
-    user := db.FindUser(id).Try()
-    profile := db.FindProfile(user.ID).Try()
+    user := db.FindUser(id).BubbleUp()
+    profile := db.FindProfile(user.ID).BubbleUp()
     
     return result.Ok(ProcessData(user, profile))
 }
@@ -292,8 +292,8 @@ func MixedUsage(id int) (User, error) {
     var err error
     defer result.CatchErr(&user, &err)
     
-    config := loadConfig().Try()
-    user = findUser(id).Try()
+    config := loadConfig().BubbleUp()
+    user = findUser(id).BubbleUp()
     
     return user, nil
 }
@@ -312,7 +312,7 @@ Option operations:            5-10 ns/op
 ```
 
 **Recommendations:**
-- Use `Try()` for business logic where clarity matters
+- Use `BubbleUp()` for business logic where clarity matters
 - Use `Chain` for complex operation sequences
 - Use traditional patterns in performance-critical loops
 - The readability benefit usually outweighs the small cost
