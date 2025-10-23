@@ -69,7 +69,7 @@ The `chain` package provides fluent method chaining for `Result` and `Option` ty
 ### Installation
 
 ```go
-import "github.com/seyedali-dev/gopherbox/rusty/chain"
+import "github.com/seyedali-dev/goxide/rusty/chain"
 ```
 
 ### Basic Usage

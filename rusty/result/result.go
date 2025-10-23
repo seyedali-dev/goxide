@@ -46,8 +46,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/seyedali-dev/gopherbox/rusty/option"
-	"github.com/seyedali-dev/gopherbox/rusty/types"
+	"github.com/seyedali-dev/goxide/rusty/option"
+	"github.com/seyedali-dev/goxide/rusty/types"
 )
 
 // -------------------------------------------- Types --------------------------------------------

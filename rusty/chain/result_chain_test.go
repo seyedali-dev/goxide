@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/seyedali-dev/gopherbox/rusty/chain"
-	"github.com/seyedali-dev/gopherbox/rusty/result"
+	"github.com/seyedali-dev/goxide/rusty/chain"
+	"github.com/seyedali-dev/goxide/rusty/result"
 )
 
 // -------------------------------------------- Test Data --------------------------------------------

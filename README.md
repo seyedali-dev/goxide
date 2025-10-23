@@ -1,16 +1,16 @@
-# GopherBox - Go Utilities Library
+# Goxide - Rust patterns in GO?
 
 ![Go Version](https://img.shields.io/badge/Go-1.25%2B-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 
+<p align="center">
+  <img src="./goxide.png" alt="goxide logo" width="400"/>
+</p>
+
 A comprehensive Go utilities library inspired by Rust's safety and expressiveness, providing robust error handling, reflection utilities, and functional programming patterns.
 
 ## 📦 Packages Overview
-
-### Core Utilities
-- **[`errors`](./errors)**: Enhanced error utilities with nil-safe handling
-- **[`reflect`](./reflect)**: Type-safe reflection utilities for struct operations
 
 ### Rust-Inspired Patterns (`rusty` package)
 - **[`result`](./rusty/result/README_RESULT.md)**: Rust-like Result type with Try/Catch patterns (equivalent to Rust's `?` operator)
@@ -23,17 +23,17 @@ A comprehensive Go utilities library inspired by Rust's safety and expressivenes
 ### Installation
 
 ```bash
-go get github.com/seyedali-dev/gopherbox
+go get github.com/seyedali-dev/goxide
 ```
 
 ### Basic Usage
 
 ```go
 import (
-    "github.com/seyedali-dev/gopherbox/rusty/result"
-    "github.com/seyedali-dev/gopherbox/rusty/option"
-    "github.com/seyedali-dev/gopherbox/rusty/chain"
-    "github.com/seyedali-dev/gopherbox/reflect"
+    "github.com/seyedali-dev/goxide/rusty/result"
+    "github.com/seyedali-dev/goxide/rusty/option"
+    "github.com/seyedali-dev/goxide/rusty/chain"
+    "github.com/seyedali-dev/goxide/reflect"
 )
 
 // Result pattern for error handling (Rust's ? equivalent)
@@ -163,41 +163,6 @@ process := types.Compose(strings.TrimSpace, strings.ToUpper)
 result := process("  hello  ") // "HELLO"
 ```
 
-### [Reflect Package](./reflect)
-Type-safe reflection utilities for struct operations.
-
-**Key Features:**
-- Struct field introspection
-- Tag parsing and validation
-- Type-safe field access
-- Compile-time safety with generics
-
-**Example:**
-```go
-// Type-safe reflector
-userReflector := reflect.ForType[User]()
-tagValue := userReflector.FieldTagValue("Name", "json")
-
-// Traditional usage
-tags := reflect.FieldTagKeys(user, "Name")
-```
-
-### [Errors Package](./errors)
-Enhanced error utilities with nil-safe handling.
-
-**Key Features:**
-- Generic error wrapping
-- Nil value detection
-- Consistent error patterns
-
-**Example:**
-```go
-user, err := errors.EnsureResult(
-    db.FindUser(123), 
-    "user not found"
-)
-```
-
 ## 🏗️ Architecture Principles
 
 ### 1. **Explicit Over Implicit**
@@ -324,7 +289,7 @@ You're welcome for contributions! Please see our [Contributing Guide](CONTRIBUTI
 ### Development Setup
 
 ```bash
-git clone https://github.com/seyedali-dev/gopherbox
+git clone https://github.com/seyedali-dev/goxide
 cd gopherbox
 go test ./...
 ```
@@ -361,8 +326,8 @@ Inspired by:
 ## 📞 Support
 
 - 📧 **Email**: [seyedali.dev@gmail.com](mailto:seyedali.dev@gmail.com)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/seyedali-dev/gopherbox/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/seyedali-dev/gopherbox/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/seyedali-dev/goxide/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/seyedali-dev/goxide/discussions)
 
 ## 🚀 Roadmap
 

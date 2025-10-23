@@ -14,7 +14,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/seyedali-dev/gopherbox/rusty/result"
+	"github.com/seyedali-dev/goxide/rusty/result"
 )
 
 // -------------------------------------------- Domain Types --------------------------------------------
@@ -55,14 +55,14 @@ var (
 
 // -------------------------------------------- Example 1: Simple Database Query with Fallback --------------------------------------------
 
-// FindUserWithFallback demonstrates using Try() with CatchWith for cache fallback.
+// FindUserWithFallback demonstrates using BubbleUp() with CatchWith for cache fallback.
 // If database fails, it automatically tries the cache.
 func FindUserWithFallback(db *sql.DB, cache Cache, userID int) (res result.Result[User]) {
 	defer result.Catch(&res)
 
 	// If database fails, try cache
 	defer result.CatchWith(&res, func(err error) User {
-		return cache.GetUser(userID).Try()
+		return cache.GetUser(userID).BubbleUp()
 	}, ErrDatabaseDown)
 
 	// Try database first
@@ -82,17 +82,17 @@ func FindUserWithFallback(db *sql.DB, cache Cache, userID int) (res result.Resul
 
 // -------------------------------------------- Example 2: Multi-Step Order Processing --------------------------------------------
 
-// ProcessOrderPipeline demonstrates chaining multiple operations with Try().
+// ProcessOrderPipeline demonstrates chaining multiple operations with BubbleUp().
 // Each step can fail and will automatically propagate errors.
 func ProcessOrderPipeline(db *sql.DB, orderID int) (res result.Result[string]) {
 	defer result.Catch(&res)
 
-	// Each Try() call will early-return if there's an error
-	order := fetchOrder(db, orderID).Try()
-	user := fetchUser(db, order.UserID).Try()
-	validateOrderAmount(order).Try()
-	payment := chargePayment(user, order).Try()
-	receipt := generateReceipt(payment).Try()
+	// Each BubbleUp() call will early-return if there's an error
+	order := fetchOrder(db, orderID).BubbleUp()
+	user := fetchUser(db, order.UserID).BubbleUp()
+	validateOrderAmount(order).BubbleUp()
+	payment := chargePayment(user, order).BubbleUp()
+	receipt := generateReceipt(payment).BubbleUp()
 
 	return result.Ok(receipt)
 }
@@ -110,7 +110,7 @@ func LoadConfiguration(configPath string) (res result.Result[Config]) {
 		APITimeout:  30 * time.Second,
 	}, ErrConfigNotFound)
 
-	config := result.Wrap(loadConfigFromFile(configPath)).Try()
+	config := result.Wrap(loadConfigFromFile(configPath)).BubbleUp()
 	return result.Ok(config)
 }
 
@@ -126,17 +126,17 @@ func FetchDataMultiLayer(id int) (res result.Result[string]) {
 
 	// Try remote API if database fails
 	defer result.CatchWith(&res, func(err error) string {
-		return result.Wrap(fetchFromRemoteAPI(id)).Try()
+		return result.Wrap(fetchFromRemoteAPI(id)).BubbleUp()
 	}, ErrDatabaseDown)
 
 	// Try database if cache fails
 	defer result.CatchWith(&res, func(err error) string {
-		return result.Wrap(fetchFromDatabase(id)).Try()
+		return result.Wrap(fetchFromDatabase(id)).BubbleUp()
 	}, ErrCacheMiss)
 
 	// Try local cache if memory fails
 	defer result.CatchWith(&res, func(err error) string {
-		return result.Wrap(fetchFromCache(id)).Try()
+		return result.Wrap(fetchFromCache(id)).BubbleUp()
 	}, sql.ErrNoRows)
 
 	// Try memory first (fastest)
@@ -155,8 +155,8 @@ func HandleGetUser(db *sql.DB) http.HandlerFunc {
 		// CatchErr adapts Result to (value, error)
 		defer result.CatchErr(&user, &err)
 
-		userID := extractUserID(r).Try()
-		user = fetchUser(db, userID).Try()
+		userID := extractUserID(r).BubbleUp()
+		user = fetchUser(db, userID).BubbleUp()
 
 		if err != nil {
 			handleHTTPError(w, err)
@@ -169,13 +169,13 @@ func HandleGetUser(db *sql.DB) http.HandlerFunc {
 
 // -------------------------------------------- Example 6: Validation Chain --------------------------------------------
 
-// ValidateUserInput demonstrates chaining validations with Try().
+// ValidateUserInput demonstrates chaining validations with BubbleUp().
 func ValidateUserInput(email, password, username string) (res result.Result[User]) {
 	defer result.Catch(&res)
 
-	validEmail := validateEmail(email).Try()
-	_ = validatePassword(password).Try()
-	validUsername := validateUsername(username).Try()
+	validEmail := validateEmail(email).BubbleUp()
+	_ = validatePassword(password).BubbleUp()
+	validUsername := validateUsername(username).BubbleUp()
 
 	return result.Ok(User{
 		Email: validEmail,
@@ -189,7 +189,7 @@ func ValidateUserInput(email, password, username string) (res result.Result[User
 func ExecuteTransaction(db *sql.DB, userID int, amount float64) (res result.Result[string]) {
 	defer result.Catch(&res)
 
-	tx := result.Wrap(db.Begin()).Try()
+	tx := result.Wrap(db.Begin()).BubbleUp()
 
 	// Rollback on any error
 	defer func() {
@@ -199,10 +199,10 @@ func ExecuteTransaction(db *sql.DB, userID int, amount float64) (res result.Resu
 	}()
 
 	// Execute transaction steps
-	updateBalance(tx, userID, amount).Try()
-	recordTransaction(tx, userID, amount).Try()
+	updateBalance(tx, userID, amount).BubbleUp()
+	recordTransaction(tx, userID, amount).BubbleUp()
 
-	//result.Wrap(nil, tx.Commit()).Try()
+	//result.Wrap(nil, tx.Commit()).BubbleUp()
 	//return result.Ok("transaction completed")
 	panic("TODO: fix my error")
 }
@@ -218,17 +218,17 @@ func FetchWithTimeout(ctx context.Context, url string) (res result.Result[[]byte
 		return result.Err[[]byte](ctx.Err())
 	}
 
-	req := result.Wrap(http.NewRequestWithContext(ctx, "GET", url, nil)).Try()
+	req := result.Wrap(http.NewRequestWithContext(ctx, "GET", url, nil)).BubbleUp()
 
 	client := &http.Client{Timeout: 30 * time.Second}
-	resp := result.Wrap(client.Do(req)).Try()
+	resp := result.Wrap(client.Do(req)).BubbleUp()
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return result.Err[[]byte](fmt.Errorf("HTTP %d", resp.StatusCode))
 	}
 
-	data := result.Wrap(io.ReadAll(resp.Body)).Try()
+	data := result.Wrap(io.ReadAll(resp.Body)).BubbleUp()
 	return result.Ok(data)
 }
 
@@ -263,8 +263,8 @@ func MigrateToResult(db *sql.DB, userID int) (res result.Result[User]) {
 		return result.Err[User](err)
 	}
 
-	// New Result-based function - use Try()
-	enrichedUser := enrichUserData(user).Try()
+	// New Result-based function - use BubbleUp()
+	enrichedUser := enrichUserData(user).BubbleUp()
 
 	return result.Ok(enrichedUser)
 }
@@ -422,15 +422,15 @@ func TraditionalStyle(db *sql.DB, orderID int) (string, error) {
 	return receipt, nil
 }
 
-// ResultStyleWithTry shows the new Try() pattern (recommended for sequential operations).
+// ResultStyleWithTry shows the new BubbleUp() pattern (recommended for sequential operations).
 func ResultStyleWithTry(db *sql.DB, orderID int) (res result.Result[string]) {
 	defer result.Catch(&res)
 
-	order := fetchOrder(db, orderID).Try()
-	user := fetchUser(db, order.UserID).Try()
-	validateOrderAmount(order).Try()
-	payment := chargePayment(user, order).Try()
-	receipt := generateReceipt(payment).Try()
+	order := fetchOrder(db, orderID).BubbleUp()
+	user := fetchUser(db, order.UserID).BubbleUp()
+	validateOrderAmount(order).BubbleUp()
+	payment := chargePayment(user, order).BubbleUp()
+	receipt := generateReceipt(payment).BubbleUp()
 
 	return result.Ok(receipt)
 }

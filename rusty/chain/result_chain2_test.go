@@ -7,8 +7,8 @@ package chain_test
 import (
 	"testing"
 
-	"github.com/seyedali-dev/gopherbox/rusty/chain"
-	"github.com/seyedali-dev/gopherbox/rusty/result"
+	"github.com/seyedali-dev/goxide/rusty/chain"
+	"github.com/seyedali-dev/goxide/rusty/result"
 )
 
 func TestResultChain_MultipleOperations(t *testing.T) {

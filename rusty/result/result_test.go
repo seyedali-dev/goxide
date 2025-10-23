@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/seyedali-dev/gopherbox/rusty/result"
+	"github.com/seyedali-dev/goxide/rusty/result"
 )
 
 // -------------------------------------------- Error Definitions --------------------------------------------

@@ -51,7 +51,7 @@ The `types` package provides small, generic functional helpers inspired by funct
 ### Installation
 
 ```go
-import "github.com/seyedali-dev/gopherbox/rusty/types"
+import "github.com/seyedali-dev/goxide/rusty/types"
 ```
 
 ## Core Functions
@@ -235,8 +235,8 @@ The helpers work seamlessly with the `Result` type:
 
 ```go
 import (
-    "github.com/seyedali-dev/gopherbox/rusty/result"
-    "github.com/seyedali-dev/gopherbox/rusty/types"
+    "github.com/seyedali-dev/goxide/rusty/result"
+    "github.com/seyedali-dev/goxide/rusty/types"
 )
 
 // Identity in Result transformations
@@ -258,8 +258,8 @@ Similarly, they work well with `Option`:
 
 ```go
 import (
-    "github.com/seyedali-dev/gopherbox/rusty/option"
-    "github.com/seyedali-dev/gopherbox/rusty/types"
+    "github.com/seyedali-dev/goxide/rusty/option"
+    "github.com/seyedali-dev/goxide/rusty/types"
 )
 
 // Identity in Option transformations

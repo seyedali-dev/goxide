@@ -241,7 +241,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) (user User, err error
 ### Installation
 
 ```go
-import "github.com/seyedali-dev/gopherbox/rusty/result"
+import "github.com/seyedali-dev/goxide/rusty/result"
 ```
 
 ### Basic Usage
