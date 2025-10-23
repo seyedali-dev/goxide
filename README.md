@@ -13,10 +13,10 @@ A comprehensive Go utilities library inspired by Rust's safety and expressivenes
 - **[`reflect`](./reflect)**: Type-safe reflection utilities for struct operations
 
 ### Rust-Inspired Patterns (`rusty` package)
-- **[`result`](./rusty/result/README_RESULT.md)**: Rust-like Result type with error bubble up (Try/Catch) patterns (rust's `?` equivalent)
+- **[`result`](./rusty/result/README_RESULT.md)**: Rust-like Result type with Try/Catch patterns (equivalent to Rust's `?` operator)
 - **[`option`](./rusty/option/README_OPTION.md)**: Optional value handling without nil panics
-- **[`chain`](./rusty/chain/README_CHAIN.md)**: Fluent method chaining for Result and Option
-- **[`types`](./rusty/types)**: Generic functional programming helpers
+- **[`chain`](./rusty/chain/README_CHAIN.md)**: Fluent method chaining for Result and Option types
+- **[`types`](./rusty/types/README_TYPES.md)**: Generic functional programming helpers
 
 ## 🚀 Quick Start
 
@@ -32,10 +32,11 @@ go get github.com/seyedali-dev/gopherbox
 import (
     "github.com/seyedali-dev/gopherbox/rusty/result"
     "github.com/seyedali-dev/gopherbox/rusty/option"
+    "github.com/seyedali-dev/gopherbox/rusty/chain"
     "github.com/seyedali-dev/gopherbox/reflect"
 )
 
-// Result pattern for error handling
+// Result pattern for error handling (Rust's ? equivalent)
 func GetUser(id int) (res result.Result[User]) {
     defer result.Catch(&res)
     
@@ -49,6 +50,14 @@ func GetUser(id int) (res result.Result[User]) {
 func GetUserName(userID int) string {
     userOpt := cache.GetUser(userID)
     return userOpt.UnwrapOr("Guest")
+}
+
+// Chain pattern for fluent operations
+func ProcessUser(userID int) result.Result[string] {
+    return chain.Chain(findUser(userID)).
+        Map(func(u User) string { return u.Name }).
+        AndThen(validateName).
+        Unwrap()
 }
 
 // Reflection utilities
@@ -65,7 +74,7 @@ func GetStructTags(user User) []string {
 - Explicit optional values
 
 ### 🛠️ Error Handling
-- **Rust-like Result type** with `Try()` for early returns
+- **Rust-like Result type** with `Try()` for early returns (equivalent to Rust's `?` operator)
 - **Error recovery** with `CatchWith` and `Fallback`
 - **Functional composition** with `Map`, `AndThen`, `FlatMap`
 
@@ -76,7 +85,7 @@ func GetStructTags(user User) []string {
 
 ### 🔗 Fluent APIs
 - **Method chaining** for complex operations
-- **Pipeline-style programming**
+- **Pipeline-style programming** with the chain package
 - **Readable sequential operations**
 
 ## 📚 Package Details
@@ -84,7 +93,7 @@ func GetStructTags(user User) []string {
 ### [Result Package](./rusty/result/README_RESULT.md)
 Rust-inspired error handling with early returns and error recovery patterns.
 
-**Features:**
+**Key Features:**
 - `Try()` method equivalent to Rust's `?` operator
 - Error-specific recovery with `CatchWith`
 - Functional composition with `Map` and `AndThen`
@@ -106,7 +115,7 @@ func ProcessOrder(orderID int) (res result.Result[Receipt]) {
 ### [Option Package](./rusty/option/README_OPTION.md)
 Safe optional value handling without nil pointer panics.
 
-**Features:**
+**Key Features:**
 - Explicit Some/None semantics
 - Safe value extraction with fallbacks
 - Functional transformation with `Map` and `FlatMap`
@@ -125,7 +134,7 @@ func GetUserEmail(userID int) option.Option[string] {
 ### [Chain Package](./rusty/chain/README_CHAIN.md) (work in progress)
 Fluent method chaining for Result and Option types.
 
-**Features:**
+**Key Features:**
 - Pipeline-style operation sequencing
 - Type-safe transformation chains
 - No nested Map/AndThen calls
@@ -138,10 +147,26 @@ chain.Chain(findUser(123)).
     AndThen(validateName)
 ```
 
+### [Types Package](./rusty/types/README_TYPES.md)
+Generic functional programming helpers.
+
+**Key Features:**
+- Identity function and constant generators
+- Function composition utilities
+- Higher-order function support
+- Integration with Result and Option
+
+**Example:**
+```go
+// Function composition
+process := types.Compose(strings.TrimSpace, strings.ToUpper)
+result := process("  hello  ") // "HELLO"
+```
+
 ### [Reflect Package](./reflect)
 Type-safe reflection utilities for struct operations.
 
-**Features:**
+**Key Features:**
 - Struct field introspection
 - Tag parsing and validation
 - Type-safe field access
@@ -160,7 +185,7 @@ tags := reflect.FieldTagKeys(user, "Name")
 ### [Errors Package](./errors)
 Enhanced error utilities with nil-safe handling.
 
-**Features:**
+**Key Features:**
 - Generic error wrapping
 - Nil value detection
 - Consistent error patterns
@@ -203,7 +228,9 @@ Comprehensive examples are available in the [`examples`](./rusty/examples) packa
 - [HTTP handlers with error handling](./rusty/examples/examples.go)
 - [Validation chains](./rusty/examples/examples.go)
 - [Transaction handling](./rusty/examples/examples.go)
+- [Fluent method chaining](./rusty/chain/README_CHAIN.md#examples)
 
+You can also find more detailed explanation in each sub-packages e.g., [Result Package](./rusty/result/README_RESULT.md), [Option Package](./rusty/option/README_OPTION.md), [Chain Package](./rusty/chain/README_CHAIN.md), [Types Package](./rusty/types/README_TYPES.md) (some might not have as the docstring explanation suffices).
 ## 🔧 Migration Guide
 
 ### From Traditional Go
@@ -225,7 +252,7 @@ func GetUserData(id int) (UserData, error) {
 }
 ```
 
-**After:**
+**After (with Try pattern):**
 ```go
 func GetUserData(id int) (res result.Result[UserData]) {
     defer result.Catch(&res)
@@ -234,6 +261,20 @@ func GetUserData(id int) (res result.Result[UserData]) {
     profile := db.FindProfile(user.ID).Try()
     
     return result.Ok(ProcessData(user, profile))
+}
+```
+
+**After (with Chain pattern):**
+```go
+func GetUserData(id int) result.Result[UserData] {
+    return chain.Chain(db.FindUser(id)).
+        AndThen(func(user User) result.Result[Profile] {
+            return db.FindProfile(user.ID)
+        }).
+        Map(func(profile Profile) UserData {
+            return ProcessData(user, profile)
+        }).
+        Unwrap()
 }
 ```
 
@@ -266,17 +307,19 @@ Benchmarks show minimal overhead:
 Traditional error handling:   100 ns/op
 Result with Try/Catch:        150 ns/op (+50%)
 Result with AndThen:          110 ns/op (+10%)
+Chain operations:             115 ns/op (+15%)
 Option operations:            5-10 ns/op
 ```
 
 **Recommendations:**
 - Use `Try()` for business logic where clarity matters
+- Use `Chain` for complex operation sequences
 - Use traditional patterns in performance-critical loops
 - The readability benefit usually outweighs the small cost
 
 ## 🤝 Contributing
 
-You're welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+You're welcome for contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ### Development Setup
 
@@ -309,8 +352,9 @@ See [THIRD_PARTY_LICENSES](./THIRD_PARTY_LICENSES) for the full license text.
 ## 🙏 Acknowledgments
 
 Inspired by:
-- **Rust**'s `Result` and `Option` types
-- **Functional programming** patterns
+
+- **Rust**'s `Result<T, E>` and `Option<T>` types with `?` operator
+- **Functional programming** patterns and composition
 - **Go**'s simplicity and pragmatism
 - The Go community's best practices
 
