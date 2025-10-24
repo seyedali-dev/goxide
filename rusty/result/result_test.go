@@ -2,6 +2,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for details.
 
 // Package result_test demonstrates the enhanced Result type with Try/Catch functionality.
+//
+// Tests done on:
+//
+//	goos: linux
+//	goarch: amd64
+//	pkg: github.com/seyedali-dev/goxide/rusty/result
+//	cpu: 11th Gen Intel(R) Core(TM) i5-11400H @ 2.70GHz
 package result_test
 
 import (
@@ -547,6 +554,9 @@ func TestEdgeCase_CatchWithReThrow(t *testing.T) {
 
 // -------------------------------------------- Benchmark Tests --------------------------------------------
 
+// Test result:
+//
+//	BenchmarkTraditionalErrorHandling    	1000000000	         0.2497 ns/op	       0 B/op
 func BenchmarkTraditionalErrorHandling(b *testing.B) {
 	compute := func() (int, error) {
 		val1, err := divide(100, 2)
@@ -564,11 +574,15 @@ func BenchmarkTraditionalErrorHandling(b *testing.B) {
 		return val3, nil
 	}
 
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_, _ = compute()
 	}
 }
 
+// Test result:
+//
+//	BenchmarkResultWithTry    	25683512	        45.96 ns/op	      32 B/op	       4 allocs/op
 func BenchmarkResultWithTry(b *testing.B) {
 	compute := func() (res result.Result[int]) {
 		defer result.Catch(&res)
@@ -578,11 +592,15 @@ func BenchmarkResultWithTry(b *testing.B) {
 		return result.Ok(val3)
 	}
 
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_ = compute()
 	}
 }
 
+// Test result:
+//
+//	BenchmarkResultWithAndThen    	28387802	        41.85 ns/op	      24 B/op	       3 allocs/op
 func BenchmarkResultWithAndThen(b *testing.B) {
 	compute := func() result.Result[int] {
 		wrappedResult := result.Wrap(divide(100, 2))
@@ -595,6 +613,7 @@ func BenchmarkResultWithAndThen(b *testing.B) {
 		return wrappedDivideResult
 	}
 
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_ = compute()
 	}
