@@ -333,10 +333,11 @@ Inspired by:
 
 ## 🚀 Roadmap
 
-- [ ] **v1.0**: Enhanced chaining
-- [ ] **v1.1**: Enhanced collection utilities
-- [ ] **v1.2**: Async/await patterns for Go
-- [ ] **v1.3**: Database integration helpers
+- [ ] **v.15.0**: Improve the result to avoid memory allocation
+- [ ] **v1.0.0**: Enhanced chaining
+- [ ] **v1.1.0**: Enhanced collection utilities
+- [ ] **v1.2.0**: Async/await patterns for Go
+- [ ] **v1.3.0**: Database integration helpers
 
 ---
 
