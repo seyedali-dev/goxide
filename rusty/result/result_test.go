@@ -320,6 +320,7 @@ func TestCatchErr_Success(t *testing.T) {
 func TestCatchErr_Error(t *testing.T) {
 	compute := func() (val int, err error) {
 		defer result.CatchErr(&val, &err)
+
 		result1 := result.Wrap(divide(10, 0)).BubbleUp()
 		return result1 * 2, nil
 	}
@@ -487,10 +488,6 @@ func TestEdgeCase_PanicRecovery(t *testing.T) {
 		// Regular panic (not from Try) should be re-raised
 		defer func() {
 			if r := recover(); r != nil {
-				if str, ok := r.(string); ok && str == "regular panic" {
-					// Expected - this is a non-Try panic
-					return
-				}
 				panic(r) // Re-panic if it's something else
 			}
 		}()

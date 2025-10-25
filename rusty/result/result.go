@@ -437,13 +437,19 @@ func Fallback[T any](res *Result[T], fallback T, when ...error) {
 //	    return QueryAPI(ctx, config).BubbleUp(), nil
 //	}
 func CatchErr[T any](out *T, err *error) {
-	res := Err[T](*err)
+	var res Result[T]
 	defer func() {
-		if res.IsErr() {
-			*err = res.Err()
-		} else {
-			*out = res.Unwrap()
+		if r := recover(); r != nil {
+			// Only handle tryError panics, re-panic others
+			if tryErr, ok := r.(tryError); ok {
+				*err = tryErr.error     // a BubbleUp panic - convert to error return
+				*out = types.Value[T]() // Set to zero value
+				return
+			} else {
+				panic(r) // Re-panic non-tryError panics
+			}
 		}
+		// If no panic occurred, don't modify the return values
 	}()
 	defer Catch(&res)
 
