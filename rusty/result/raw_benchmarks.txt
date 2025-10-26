@@ -1,0 +1,195 @@
+// Copyright (c) 2025 SeyedAli
+// Licensed under the MIT License. See LICENSE file in the project root for details.
+
+Benchmark tests run with: `go test -bench=. -count=6 -benchmem | tee raw_benchmarks.txt` command.
+
+goos: linux
+goarch: amd64
+pkg: github.com/seyedali-dev/goxide/rusty/result
+cpu: 11th Gen Intel(R) Core(TM) i5-11400H @ 2.70GHz
+BenchmarkTraditionalSuccess                        	1000000000	         0.2479 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalSuccess                        	1000000000	         0.2352 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalSuccess                        	1000000000	         0.2353 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalSuccess                        	1000000000	         0.2444 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalSuccess                        	1000000000	         0.2450 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalSuccess                        	1000000000	         0.2388 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkResultSuccess                             	1000000000	         0.2451 ns/op	       0 B/op	       0 allocs/op
+BenchmarkResultSuccess                             	1000000000	         0.2465 ns/op	       0 B/op	       0 allocs/op
+BenchmarkResultSuccess                             	1000000000	         0.2470 ns/op	       0 B/op	       0 allocs/op
+BenchmarkResultSuccess                             	1000000000	         0.2444 ns/op	       0 B/op	       0 allocs/op
+BenchmarkResultSuccess                             	1000000000	         0.2446 ns/op	       0 B/op	       0 allocs/op
+BenchmarkResultSuccess                             	1000000000	         0.2449 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkResultSuccessUnwrapOr                     	88091043	        12.75 ns/op	       8 B/op	       1 allocs/op
+BenchmarkResultSuccessUnwrapOr                     	81610506	        12.48 ns/op	       8 B/op	       1 allocs/op
+BenchmarkResultSuccessUnwrapOr                     	81236329	        14.14 ns/op	       8 B/op	       1 allocs/op
+BenchmarkResultSuccessUnwrapOr                     	90896406	        14.39 ns/op	       8 B/op	       1 allocs/op
+BenchmarkResultSuccessUnwrapOr                     	78484536	        14.07 ns/op	       8 B/op	       1 allocs/op
+BenchmarkResultSuccessUnwrapOr                     	76419982	        14.93 ns/op	       8 B/op	       1 allocs/op
+
+BenchmarkTraditionalError                          	1000000000	         0.2456 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalError                          	1000000000	         0.2484 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalError                          	1000000000	         0.2468 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalError                          	1000000000	         0.2458 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalError                          	1000000000	         0.2461 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalError                          	1000000000	         0.2411 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkResultError                               	50303355	        24.55 ns/op	      16 B/op	       1 allocs/op
+BenchmarkResultError                               	52737903	        23.04 ns/op	      16 B/op	       1 allocs/op
+BenchmarkResultError                               	52953288	        23.85 ns/op	      16 B/op	       1 allocs/op
+BenchmarkResultError                               	41273402	        24.41 ns/op	      16 B/op	       1 allocs/op
+BenchmarkResultError                               	44652282	        23.22 ns/op	      16 B/op	       1 allocs/op
+BenchmarkResultError                               	52124626	        24.68 ns/op	      16 B/op	       1 allocs/op
+
+BenchmarkTraditionalChainedSuccess                 	1000000000	         0.2425 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalChainedSuccess                 	1000000000	         0.2380 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalChainedSuccess                 	1000000000	         0.2463 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalChainedSuccess                 	1000000000	         0.2392 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalChainedSuccess                 	1000000000	         0.2461 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalChainedSuccess                 	1000000000	         0.2426 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkResultChainedSuccess                      	31059165	        42.77 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultChainedSuccess                      	27306475	        39.21 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultChainedSuccess                      	31521540	        39.52 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultChainedSuccess                      	26952315	        44.02 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultChainedSuccess                      	28871199	        39.42 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultChainedSuccess                      	30200277	        36.63 ns/op	      24 B/op	       3 allocs/op
+
+BenchmarkTraditionalDBCreateUser                   	     835	   1489871 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUser                   	     840	   1455005 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUser                   	     838	   1417823 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUser                   	     855	   1404117 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUser                   	     819	   1410790 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUser                   	     804	   1415018 ns/op	    1133 B/op	      27 allocs/op
+
+BenchmarkResultDBCreateUser                        	     826	   1436112 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUser                        	     830	   1416310 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUser                        	     836	   1419613 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUser                        	     819	   1611538 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUser                        	     775	   1596406 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUser                        	     814	   1528315 ns/op	    1138 B/op	      28 allocs/op
+
+BenchmarkTraditionalDBFindUser                     	    9790	    131185 ns/op	    1104 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUser                     	    9310	    122358 ns/op	    1104 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUser                     	    9915	    125590 ns/op	    1104 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUser                     	    9781	    131428 ns/op	    1104 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUser                     	    9859	    127006 ns/op	    1104 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUser                     	   10000	    120180 ns/op	    1104 B/op	      27 allocs/op
+
+BenchmarkResultDBFindUser                          	    9561	    123207 ns/op	    1112 B/op	      28 allocs/op
+BenchmarkResultDBFindUser                          	    8365	    127129 ns/op	    1112 B/op	      28 allocs/op
+BenchmarkResultDBFindUser                          	    9795	    121133 ns/op	    1112 B/op	      28 allocs/op
+BenchmarkResultDBFindUser                          	   10564	    122182 ns/op	    1112 B/op	      28 allocs/op
+BenchmarkResultDBFindUser                          	    9741	    112565 ns/op	    1112 B/op	      28 allocs/op
+BenchmarkResultDBFindUser                          	    9014	    113195 ns/op	    1112 B/op	      28 allocs/op
+
+BenchmarkTraditionalDBFindUserNotFound             	     871	   1317180 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUserNotFound             	     892	   1324470 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUserNotFound             	     882	   1347658 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUserNotFound             	     830	   1356974 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUserNotFound             	     786	   1435928 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkTraditionalDBFindUserNotFound             	     859	   1444654 ns/op	    1122 B/op	      27 allocs/op
+
+BenchmarkResultDBFindUserNotFound                  	     892	   1330721 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkResultDBFindUserNotFound                  	     885	   1331227 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkResultDBFindUserNotFound                  	     877	   1341838 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkResultDBFindUserNotFound                  	     834	   1360424 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkResultDBFindUserNotFound                  	     829	   1334311 ns/op	    1122 B/op	      27 allocs/op
+BenchmarkResultDBFindUserNotFound                  	     872	   1331552 ns/op	    1122 B/op	      27 allocs/op
+
+BenchmarkTraditionalDBUpdateUser                   	    9429	    122310 ns/op	     368 B/op	      10 allocs/op
+BenchmarkTraditionalDBUpdateUser                   	    9021	    121525 ns/op	     368 B/op	      10 allocs/op
+BenchmarkTraditionalDBUpdateUser                   	    8562	    117425 ns/op	     368 B/op	      10 allocs/op
+BenchmarkTraditionalDBUpdateUser                   	    8750	    119440 ns/op	     368 B/op	      10 allocs/op
+BenchmarkTraditionalDBUpdateUser                   	    8752	    123429 ns/op	     368 B/op	      10 allocs/op
+BenchmarkTraditionalDBUpdateUser                   	    8708	    121030 ns/op	     368 B/op	      10 allocs/op
+
+BenchmarkResultDBUpdateUser                        	    9022	    118276 ns/op	     376 B/op	      11 allocs/op
+BenchmarkResultDBUpdateUser                        	    9481	    119545 ns/op	     376 B/op	      11 allocs/op
+BenchmarkResultDBUpdateUser                        	   10045	    118931 ns/op	     376 B/op	      11 allocs/op
+BenchmarkResultDBUpdateUser                        	    8762	    118003 ns/op	     376 B/op	      11 allocs/op
+BenchmarkResultDBUpdateUser                        	   10064	    120933 ns/op	     376 B/op	      11 allocs/op
+BenchmarkResultDBUpdateUser                        	    9994	    117498 ns/op	     376 B/op	      11 allocs/op
+
+--- FAIL: BenchmarkTraditionalDBGetOrCreateUser
+    result_benchmark_with_db_test.go:347: unexpected error: sql: no rows in result set
+BenchmarkResultDBGetOrCreateUser                   	     676	   1648845 ns/op	    3372 B/op	      80 allocs/op
+BenchmarkResultDBGetOrCreateUser                   	     705	   1654981 ns/op	    3372 B/op	      80 allocs/op
+BenchmarkResultDBGetOrCreateUser                   	     696	   1625637 ns/op	    3372 B/op	      80 allocs/op
+BenchmarkResultDBGetOrCreateUser                   	     726	   1639372 ns/op	    3372 B/op	      80 allocs/op
+BenchmarkResultDBGetOrCreateUser                   	     697	   1653975 ns/op	    3372 B/op	      80 allocs/op
+BenchmarkResultDBGetOrCreateUser                   	     667	   1698246 ns/op	    3372 B/op	      80 allocs/op
+
+BenchmarkTraditionalDBChainedOperations            	     652	   1791328 ns/op	    3698 B/op	      90 allocs/op
+BenchmarkTraditionalDBChainedOperations            	     656	   1834680 ns/op	    3699 B/op	      90 allocs/op
+BenchmarkTraditionalDBChainedOperations            	     646	   1784697 ns/op	    3699 B/op	      90 allocs/op
+BenchmarkTraditionalDBChainedOperations            	     632	   1818747 ns/op	    3699 B/op	      90 allocs/op
+BenchmarkTraditionalDBChainedOperations            	     655	   1814112 ns/op	    3698 B/op	      90 allocs/op
+BenchmarkTraditionalDBChainedOperations            	     645	   1811844 ns/op	    3698 B/op	      90 allocs/op
+
+BenchmarkResultDBChainedOperations                 	     696	   1724749 ns/op	    2602 B/op	      66 allocs/op
+BenchmarkResultDBChainedOperations                 	     700	   1661263 ns/op	    2602 B/op	      66 allocs/op
+BenchmarkResultDBChainedOperations                 	     685	   1695380 ns/op	    2602 B/op	      66 allocs/op
+BenchmarkResultDBChainedOperations                 	     688	   1727611 ns/op	    2602 B/op	      66 allocs/op
+BenchmarkResultDBChainedOperations                 	     672	   1703476 ns/op	    2602 B/op	      66 allocs/op
+BenchmarkResultDBChainedOperations                 	     698	   1682831 ns/op	    2602 B/op	      66 allocs/op
+
+BenchmarkResultDBChainedOperationsBubbleUp         	     606	   1844441 ns/op	    3722 B/op	      95 allocs/op
+BenchmarkResultDBChainedOperationsBubbleUp         	     648	   1885979 ns/op	    3723 B/op	      95 allocs/op
+BenchmarkResultDBChainedOperationsBubbleUp         	     582	   2022769 ns/op	    3723 B/op	      95 allocs/op
+BenchmarkResultDBChainedOperationsBubbleUp         	     526	   2095130 ns/op	    3723 B/op	      95 allocs/op
+BenchmarkResultDBChainedOperationsBubbleUp         	     616	   2147951 ns/op	    3723 B/op	      95 allocs/op
+BenchmarkResultDBChainedOperationsBubbleUp         	     644	   1858762 ns/op	    3723 B/op	      95 allocs/op
+
+BenchmarkTraditionalDBErrorHandlingWithFallback    	     690	   1691532 ns/op	    3216 B/op	      75 allocs/op
+BenchmarkTraditionalDBErrorHandlingWithFallback    	     673	   1687838 ns/op	    3215 B/op	      75 allocs/op
+BenchmarkTraditionalDBErrorHandlingWithFallback    	     703	   1652783 ns/op	    3215 B/op	      75 allocs/op
+BenchmarkTraditionalDBErrorHandlingWithFallback    	     560	   1876799 ns/op	    3215 B/op	      75 allocs/op
+BenchmarkTraditionalDBErrorHandlingWithFallback    	     693	   1740635 ns/op	    3216 B/op	      75 allocs/op
+BenchmarkTraditionalDBErrorHandlingWithFallback    	     670	   1751922 ns/op	    3215 B/op	      75 allocs/op
+
+BenchmarkResultDBErrorHandlingWithFallback         	     709	   1817104 ns/op	    3306 B/op	      79 allocs/op
+BenchmarkResultDBErrorHandlingWithFallback         	     630	   1653895 ns/op	    3307 B/op	      79 allocs/op
+BenchmarkResultDBErrorHandlingWithFallback         	     663	   1667657 ns/op	    3306 B/op	      79 allocs/op
+BenchmarkResultDBErrorHandlingWithFallback         	     721	   1628296 ns/op	    3306 B/op	      79 allocs/op
+BenchmarkResultDBErrorHandlingWithFallback         	     691	   1640017 ns/op	    3306 B/op	      79 allocs/op
+BenchmarkResultDBErrorHandlingWithFallback         	     716	   1625352 ns/op	    3306 B/op	      79 allocs/op
+
+BenchmarkTraditionalDBCreateUserAllocs             	     823	   1390326 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUserAllocs             	     822	   1395433 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUserAllocs             	     848	   1383900 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUserAllocs             	     816	   1396238 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUserAllocs             	     794	   1398275 ns/op	    1133 B/op	      27 allocs/op
+BenchmarkTraditionalDBCreateUserAllocs             	     854	   1384973 ns/op	    1133 B/op	      27 allocs/op
+
+BenchmarkResultDBCreateUserAllocs                  	     822	   1363577 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUserAllocs                  	     753	   1389144 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUserAllocs                  	     832	   1393204 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUserAllocs                  	     805	   1375855 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUserAllocs                  	     778	   1384166 ns/op	    1138 B/op	      28 allocs/op
+BenchmarkResultDBCreateUserAllocs                  	     828	   1386894 ns/op	    1138 B/op	      28 allocs/op
+
+BenchmarkTraditionalErrorHandling                  	1000000000	         0.2352 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalErrorHandling                  	1000000000	         0.2323 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalErrorHandling                  	1000000000	         0.2311 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalErrorHandling                  	1000000000	         0.2331 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalErrorHandling                  	1000000000	         0.2357 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTraditionalErrorHandling                  	1000000000	         0.2321 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkResultWithTry                             	25621035	        45.02 ns/op	      32 B/op	       4 allocs/op
+BenchmarkResultWithTry                             	22545846	        45.08 ns/op	      32 B/op	       4 allocs/op
+BenchmarkResultWithTry                             	24963867	        44.99 ns/op	      32 B/op	       4 allocs/op
+BenchmarkResultWithTry                             	26618769	        45.31 ns/op	      32 B/op	       4 allocs/op
+BenchmarkResultWithTry                             	23691982	        44.96 ns/op	      32 B/op	       4 allocs/op
+BenchmarkResultWithTry                             	23844022	        45.53 ns/op	      32 B/op	       4 allocs/op
+
+BenchmarkResultWithAndThen                         	28833908	        41.65 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultWithAndThen                         	26053776	        41.32 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultWithAndThen                         	27736946	        41.09 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultWithAndThen                         	26607180	        41.08 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultWithAndThen                         	27354570	        41.53 ns/op	      24 B/op	       3 allocs/op
+BenchmarkResultWithAndThen                         	25343994	        41.27 ns/op	      24 B/op	       3 allocs/op
+FAIL
+exit status 1
+FAIL	github.com/seyedali-dev/goxide/rusty/result	181.214s
